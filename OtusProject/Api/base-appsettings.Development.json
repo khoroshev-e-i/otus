@@ -1,0 +1,46 @@
+﻿{
+    "AccessTokens": [
+        "adasdasdasd"
+    ],
+    "ConnectionStrings": {
+//        "PersonalAccount": "Host=localhost;Port=5432;Database=personal_account;Username=postgres;Password=Qwe123123.",
+        "PersonalAccount": "Host=pgsql15-qa.travelline.lan;Port=5000;Database=personal_account_qa1;Username=personal_account_qa1_user;Password=hkFDa8Hhg8WHvn3JjWZG"
+
+        //"PersonalAccount": "Host=pgcb.travelline.wan;Port=5000;Database=personal_account;Username=personal_account_user;Password=qwLWQT74hpGxXqaf1p7D"
+    },
+    "RabbitMessaging": {
+        "Host": "rabbitmq://rabbitmqdev.travelline.lan:5671/mikhail.ivanov",
+        "Login": "tlapplication",
+        "Password": "password"
+    },
+    "OneCDocumentConnector": {
+        "ApiUrl": "https://1b0ac4be-a850-47c7-9d6c-6bf4297bf7db.mock.pstmn.io",
+        "ApiKey": null
+    },
+    "TransistorApiConnector": {
+        "ApiUrl": "http://localhost:6030",
+        "ApiKey": "123",
+        "TenantKey": "D3658A39-9763-40F7-8A85-B3FD866D9789"
+    },
+    "BlobStorageConnector": {
+        "ApiUrl": "https://qa1sfcl.travelline.lan/CBBlobStorage/Api",
+        "ApiKey": "f4a10420-ace8-4ec8-9524-f715eadddc77"
+    },
+    "NLog": {
+        "variables": {
+            "logsDir": "C:\\logs\\personal_account\\Api"
+        }
+    },
+    "IdentityServer": {
+        "Issuer": "https://id.qacb.ru/realms/ComfortBooking",
+        "PublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA14bqzekEbsaxb85eEt6bqHRN2MPhf355KL//uHziUqoK6oNWckiiAMJPQfPfQMsJL5kVaFmlil6doFbArQhLtAQyc8+5G92FVwjbxTaNAx12Ul4NbpECvGrFItQ5ySb0gHn9ivST6lC3Y8B6bRVEZadpnvIv0U63L0o6eHYmVVxlAwwOD0fFiI8/tYAKvp/L92e8A7XvvStblJ1eKvHuZ2IjZsbOtiBIW7/rd0Ll7BOo/RGYrUTAaGJ93xjCKpPwZWP7K3i0l+eIlu2Yad+DMBM8+zuAbVLBBiR2JEKdTf4Dc+k1F06ugpcA7W3Cdoe52NS6NRLfCC4VX+17hpwHpQIDAQAB"
+    },
+    "KeycloakSettings":
+    {
+        "BaseUrl": "https://id.qacb.ru",
+        "ClientId": "personal-account-app",
+        "ClientSecret": "",
+        "Realm": "ComfortBooking",
+        "AppScopeGroupId": "1652ee81-1ccf-4c06-9939-6575ead4a492"
+    }
+}
