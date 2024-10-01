@@ -45,8 +45,9 @@ public class UserService(DatabaseConnectionProvider _connectionProvider)
 
         request.password = GetPasswordHash(request.password);
 
+        var userId = Guid.NewGuid().ToString();
         await ExecuteInsertCommand("users", new user(
-            Guid.NewGuid().ToString(),
+            userId,
             request.username,
             request.first_name,
             request.second_name,
@@ -58,7 +59,7 @@ public class UserService(DatabaseConnectionProvider _connectionProvider)
         var session = Guid.NewGuid().ToString();
         Sessions.Active.Add(request.username, session);
 
-        return "Успешная регистрация";
+        return userId;
     }
 
     public async Task<bool> Exists(string query)
@@ -84,6 +85,15 @@ public class UserService(DatabaseConnectionProvider _connectionProvider)
         {
             await connection.CloseAsync();
         }
+    }
+
+    public async Task<UserDto[]> SearchUsers(string firstName, string secondName)
+    {
+        var users = (await ExecuteRequest<user>(
+            "SELECT * FROM users where first_name like @firstName and second_name like @secondName ",
+            new Dictionary<string, object> { { nameof(firstName), firstName + '%' }, { nameof(secondName), secondName + '%' } }));
+
+        return users.Select(UserDto.FromUser).ToArray();
     }
 
     public async Task<TResult[]?> ExecuteRequest<TResult>(string query, Dictionary<string, object> args)
@@ -114,6 +124,11 @@ public class UserService(DatabaseConnectionProvider _connectionProvider)
                 {
                     object res = reader[propertyName];
 
+                    if (res is DBNull)
+                    {
+                        continue;
+                    }
+                    
                     if (res is DateTime)
                     {
                         resultType.GetProperty(propertyName).SetValue(current, DateOnly.FromDateTime((DateTime)res));

@@ -15,9 +15,9 @@
         <PackageReference Include="Npgsql" Version="8.0.3" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0"/>
     </ItemGroup>
-
+    
     <ItemGroup>
-        <None Include="$(SolutionDir)\Api\Migrations\**" CopyToOutputDirectory="PreserveNewest"/>
+        <Content Include=".\Migrations\**" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -28,6 +28,10 @@
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Migrations\Data\" />
     </ItemGroup>
 
 </Project>

@@ -15,6 +15,10 @@ public class IdentityController(UserService _userService) : ControllerBase
     [HttpGet("user/get/{username}")]
     public async Task<IActionResult> SignIn(string username)
         => await ProcessResult(async () => await _userService.GetUser(username));
+    
+    [HttpGet("user/search")]
+    public async Task<IActionResult> SearchUsers(string first_name, string secondName)
+        => await ProcessResult(async () => await _userService.SearchUsers(first_name, secondName));
 
     private async Task<IActionResult> ProcessResult<TResult>(Func<Task<TResult>> func)
     {
