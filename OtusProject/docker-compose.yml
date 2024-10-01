@@ -2,6 +2,8 @@
   db:
     container_name: postgres-container
     image: postgres
+    networks: 
+      - pgnet
     restart: always
     volumes:
       - type: bind
@@ -21,6 +23,8 @@
       timeout: 5s
   api:
     image: api
+    networks:
+      - pgnet
     build:
       target: "final"
       context: .
@@ -30,3 +34,42 @@
         condition: service_healthy
     ports:
       - 5000:8080
+  db-slave:
+    container_name: slave
+    image: postgres
+    depends_on:
+      - db
+    networks:
+      - pgnet
+    restart: always
+    volumes:
+      - type: bind
+        source: /e/KB/docker/volumes/slave
+        target: /var/lib/postgresql/data
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: Qwe123123.
+      POSTGRES_USER: postgres
+    ports:
+      - 54302:5432
+  pg-async-slave:
+    container_name: async-slave
+    image: postgres
+    depends_on:
+      - db
+    networks:
+      - pgnet
+    restart: always
+    volumes:
+      - type: bind
+        source: /e/KB/docker/volumes/async-slave
+        target: /var/lib/postgresql/data
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: Qwe123123.
+      POSTGRES_USER: postgres
+    ports:
+      - 54301:5432
+networks:
+  pgnet:
+    driver: bridge
