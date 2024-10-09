@@ -277,7 +277,7 @@ public class UserService(DatabaseConnectionProvider _connectionProvider, IMemory
 
     public async Task<ResponseDto> DeletePost(string post_id, string userId)
     {
-        await ExecuteScalar($"delete user_post where id = @id and user_id = @userId",
+        await ExecuteScalar($"delete from user_post where id = @id and user_id = @userId",
             new Dictionary<string, object> { { "id", post_id }, { "userId", userId } });
 
         return new ResponseDto("Пользователь успешно удалил пост");
@@ -285,7 +285,7 @@ public class UserService(DatabaseConnectionProvider _connectionProvider, IMemory
 
     public async Task<ResponseDto> DeleteFriend(string userId, string friendId)
     {
-        await ExecuteScalar($"delete user_friend where user_id = @userId and friend_id=@friendId",
+        await ExecuteScalar($"delete from user_friend where user_id = @userId and friend_id=@friendId",
             new Dictionary<string, object> { { "userId", userId }, { "friendId", friendId } });
 
         return new ResponseDto("Пользователь успешно удалил друга");
