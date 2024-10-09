@@ -1,4 +1,5 @@
 using Api;
+using Microsoft.Extensions.Caching.Memory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<DatabaseConnectionProvider>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<DatabaseMigrator>();
+builder.Services.AddScoped<IMemoryCache, MemoryCache>();
 
 var app = builder.Build();
 
