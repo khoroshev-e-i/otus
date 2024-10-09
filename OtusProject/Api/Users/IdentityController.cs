@@ -13,7 +13,7 @@ public class IdentityController(UserService _userService) : ControllerBase
     public async Task<IActionResult> SignIn([FromBody] SignInRequest request)
         => await ProcessResult(async () => await _userService.SignIn(request));
     [HttpGet("user/get/{username}")]
-    public async Task<IActionResult> SignIn(string username)
+    public async Task<IActionResult> GetUser(string username)
         => await ProcessResult(async () => await _userService.GetUser(username));
     
     [HttpGet("user/search")]
