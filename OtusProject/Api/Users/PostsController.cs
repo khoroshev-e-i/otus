@@ -13,7 +13,7 @@ public class PostsController(UserService _userService) : ControllerBase
     [HttpPut("create")]
     public async Task<IActionResult> Create([FromBody] PostBodyDto body)
     {
-        var userId = GetUser();
+        var userId = HttpContext.GetUserId();
         if (userId is null)
         {
             return Unauthorized("Пользователь не авторизован");
@@ -26,7 +26,7 @@ public class PostsController(UserService _userService) : ControllerBase
     [HttpPut("update")]
     public async Task<IActionResult> Update([FromBody] PostUpdateBodyDto body)
     {
-        var userId = GetUser();
+        var userId = HttpContext.GetUserId();
         if (userId is null)
         {
             return Unauthorized("Пользователь не авторизован");
@@ -38,7 +38,7 @@ public class PostsController(UserService _userService) : ControllerBase
     [HttpPut("delete/{id}")]
     public async Task<IActionResult> DeletePost(string id)
     {
-        var userId = GetUser();
+        var userId = HttpContext.GetUserId();
         if (userId is null)
         {
             return Unauthorized("Пользователь не авторизован");
@@ -50,7 +50,7 @@ public class PostsController(UserService _userService) : ControllerBase
     [HttpGet("feed")]
     public async Task<IActionResult> Feed(int limit= 10, int offset = 0)
     {
-        var userId = GetUser();
+        var userId = HttpContext.GetUserId();
         if (userId is null)
         {
             return Unauthorized("Пользователь не авторизован");
@@ -58,20 +58,6 @@ public class PostsController(UserService _userService) : ControllerBase
 
         return Ok(await ProcessResult(async () => await _userService.Feed(userId, limit, offset)));
     }
-
-    private string? GetUser()
-    {
-        StringValues sessionId;
-        string userId;
-        if (!HttpContext.Request.Headers.TryGetValue(sessionKey, out sessionId) ||
-            !Sessions.Active.TryGetValue(sessionId, out userId))
-        {
-            return null;
-        }
-
-        return userId;
-    }
-
 
     private async Task<IActionResult> ProcessResult<TResult>(Func<Task<TResult>> func)
     {

@@ -8,12 +8,11 @@ namespace Api;
 [Route("friend")]
 public class FriendsController(UserService _userService) : ControllerBase
 {
-    private static string sessionKey = "session_id";
 
     [HttpPut("set/{user_id}")]
     public async Task<IActionResult> AddFriend(string user_id)
     {
-        var userId = GetUser();
+        var userId = HttpContext.GetUserId();
         if (userId is null)
         {
             return Unauthorized("Пользователь не авторизован");
@@ -25,25 +24,13 @@ public class FriendsController(UserService _userService) : ControllerBase
     [HttpPut("delete/{friendId}")]
     public async Task<IActionResult> DeleteFriend(string friendId)
     {
-        var userId = GetUser();
+        var userId = HttpContext.GetUserId();
         if (userId is null)
         {
             return Unauthorized("Пользователь не авторизован");
         }
 
         return await ProcessResult(async () => await _userService.DeleteFriend(userId, friendId));
-    }
-
-    private string? GetUser()
-    {
-        StringValues sessionId;
-        string userId;
-        if (!HttpContext.Request.Headers.TryGetValue(sessionKey, out sessionId) || !Sessions.Active.TryGetValue(sessionId, out userId) )
-        {
-            return null;
-        }
-
-        return userId;
     }
     
     private async Task<IActionResult> ProcessResult<TResult>(Func<Task<TResult>> func)
