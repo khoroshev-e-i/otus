@@ -328,7 +328,7 @@ public class UserService(DatabaseConnectionProvider _connectionProvider, IMemory
         });
     }
 
-    private async Task<List<user_post_dto>?> ReloadCache(string userId)
+    private async Task ReloadCache(string userId)
     {
         _memoryCache.Remove(userId);
         
@@ -378,6 +378,6 @@ where (d.from_user = @currentUserId and d.to_user = @userId) or (d.from_user = @
                 { "userId", userId }
             });
 
-        return new ResponseDto<List<dialog_dto>>("Сообщение успешно отправлено.", dialog.ToList());
+        return new ResponseDto<List<dialog_dto>>("Диалог между двумя пользователями.", dialog.ToList());
     }
 }

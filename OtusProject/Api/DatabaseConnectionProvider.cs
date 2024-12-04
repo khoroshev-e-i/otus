@@ -9,4 +9,6 @@ public class DatabaseConnectionProvider(IConfiguration _configuration)
         var connectionString = _configuration.GetConnectionString("Postgres");
         return new NpgsqlConnection(connectionString);
     }
+
+    public string ConnectionString => _configuration.GetConnectionString("Postgres");
 }

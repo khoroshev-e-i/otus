@@ -11,11 +11,9 @@ public class DatabaseMigrator(
 {
     public async Task ApplyMigrations()
     {
+        await EnsureDatabaseCreated(_connectionProvider.ConnectionString);
         await using var connection = _connectionProvider.CreateConnection();
         await connection.OpenAsync();
-
-        await EnsureDatabaseCreated(connection);
-
         var migrationFolder = configuration.GetValue<string>("MigrationScriptFolder");
         var sqlFiles = Directory.GetFiles(migrationFolder);
 
@@ -76,16 +74,17 @@ public class DatabaseMigrator(
                     user_id = faker.PickRandom(userIds),
                     post_body = faker.Lorem.Sentence(25).Substring(0, Math.Min(50, faker.Lorem.Sentence(10).Length))
                 };
-                var insertCommand = new NpgsqlCommand($"insert into user_post (id, user_id, post_body) " +
-                                                      $"values ('{post.id}', '{post.user_id}', '{post.post_body}')",
+                var insertPostCommand = new NpgsqlCommand($"insert into user_post (id, user_id, post_body, last_update) " +
+                                                      $"values ('{post.id}', '{post.user_id}', '{post.post_body}', now())",
                     connection);
-                await insertCommand.ExecuteScalarAsync();
+                await insertPostCommand.ExecuteNonQueryAsync();
+                await insertPostCommand.ExecuteScalarAsync();
             }
         }
 
         command = new NpgsqlCommand("select count(*) from public.user_friend", connection);
         count = await command.ExecuteScalarAsync();
-        if ((long?)count <= 10)
+        if ((long?)count <= 100)
         {
             IEnumerable<(string userId1, string userId2)> userPairs = from userId1 in userIds
                 from userId2 in userIds
@@ -98,7 +97,26 @@ public class DatabaseMigrator(
                     connection);
                 await insertCommand.ExecuteScalarAsync();
             }
+            Console.WriteLine("Friends generated.");
+        }
 
+        command = new NpgsqlCommand("select count(*) from public.dialog", connection);
+        count = await command.ExecuteScalarAsync();
+        if ((long?)count <= 100)
+        {
+            IEnumerable<(string userId1, string userId2)> userPairs = from userId1 in userIds
+                from userId2 in userIds
+                where userId1 != userId2
+                select (userId1, userId2);
+            foreach (var userPair in userPairs)
+            {
+                var insertCommand = new NpgsqlCommand($"insert into dialog (id, from_user, to_user, text, last_updated) " +
+                                                      $"values ('{Guid.NewGuid().ToString()}', '{userPair.userId1}'," + 
+                                                      $"'{userPair.userId2}', '{faker.Lorem.Sentence(10)}', now())",
+                    connection);
+                await insertCommand.ExecuteScalarAsync();
+            }
+            Console.WriteLine("Dialog generated.");
         }
 
         var en = userIds.GetEnumerator();
@@ -120,9 +138,13 @@ public class DatabaseMigrator(
         Console.WriteLine("Posts generated.");
     }
 
-    private async Task EnsureDatabaseCreated(NpgsqlConnection connection)
+    private async Task EnsureDatabaseCreated(string connectionString)
     {
-        var databaseName = "otus_khoroshev";
+        var databaseName = "postgres";
+        var defaultConnectionString = connectionString.Replace($"Database={databaseName}", "Database=postgres");
+
+        await using var connection = new NpgsqlConnection(defaultConnectionString);
+        await connection.OpenAsync();
         var command = new NpgsqlCommand($"select 1 From pg_database where datname = '{databaseName}'", connection);
         var result = await command.ExecuteScalarAsync();
 
@@ -143,7 +165,6 @@ public class DatabaseMigrator(
             {
                 while (reader.Read())
                 {
-                    // Предполагается, что user_id имеет тип string
                     string userId = reader.GetString(0);
                     result.Add(userId);
                 }
