@@ -1,9 +1,13 @@
 ﻿using System.Text;
+using Bogus;
+using Domain.Entities;
 using Npgsql;
 
 namespace Api;
 
-public class DatabaseMigrator(IConfiguration configuration, DatabaseConnectionProvider _connectionProvider)
+public class DatabaseMigrator(
+    IConfiguration configuration,
+    DatabaseConnectionProvider _connectionProvider)
 {
     public async Task ApplyMigrations()
     {
@@ -36,21 +40,84 @@ public class DatabaseMigrator(IConfiguration configuration, DatabaseConnectionPr
 
         var command = new NpgsqlCommand("select count(*) from public.users", connection);
         var count = await command.ExecuteScalarAsync();
-        if ((long?) count >= 1_000_000)
-            return;
-
-        using (var reader = new StreamReader(csvFilePath))
-        await using (var writer =
-                     await connection.BeginTextImportAsync("COPY users FROM STDIN WITH (FORMAT CSV, HEADER TRUE, DELIMITER ',')"))
+        if ((long?)count < 1_000_000)
         {
-            string line;
-            while ((line = await reader.ReadLineAsync()) != null)
+            using var reader = new StreamReader(csvFilePath);
+            await using (var writer =
+                         await connection.BeginTextImportAsync(
+                             "COPY users FROM STDIN WITH (FORMAT CSV, HEADER TRUE, DELIMITER ',')"))
             {
-                await writer.WriteLineAsync(line);
+                string line;
+                while ((line = await reader.ReadLineAsync()) != null)
+                {
+                    await writer.WriteLineAsync(line);
+                }
             }
         }
 
+        await SeedPosts(connection);
+
         Console.WriteLine("Data imported successfully.");
+    }
+
+    private async Task SeedPosts(NpgsqlConnection connection)
+    {
+        var userIds = await GetUserIds(connection);
+        var faker = new Faker();
+        var command = new NpgsqlCommand("select count(*) from public.user_post", connection);
+        var count = await command.ExecuteScalarAsync();
+        if ((long?)count <= 1000)
+        {
+            for (int i = 0; i < 1111; ++i)
+            {
+                var post = new user_post
+                {
+                    id = Guid.NewGuid().ToString(),
+                    user_id = faker.PickRandom(userIds),
+                    post_body = faker.Lorem.Sentence(25).Substring(0, Math.Min(50, faker.Lorem.Sentence(10).Length))
+                };
+                var insertCommand = new NpgsqlCommand($"insert into user_post (id, user_id, post_body) " +
+                                                      $"values ('{post.id}', '{post.user_id}', '{post.post_body}')",
+                    connection);
+                await insertCommand.ExecuteScalarAsync();
+            }
+        }
+
+        command = new NpgsqlCommand("select count(*) from public.user_friend", connection);
+        count = await command.ExecuteScalarAsync();
+        if ((long?)count <= 10)
+        {
+            IEnumerable<(string userId1, string userId2)> userPairs = from userId1 in userIds
+                from userId2 in userIds
+                where userId1 != userId2
+                select (userId1, userId2);
+            foreach (var userPair in userPairs)
+            {
+                var insertCommand = new NpgsqlCommand($"insert into user_friend (id, user_id, friend_id) " +
+                                                      $"values ('{Guid.NewGuid().ToString()}', '{userPair.userId1}', '{userPair.userId2}')",
+                    connection);
+                await insertCommand.ExecuteScalarAsync();
+            }
+
+        }
+
+        var en = userIds.GetEnumerator();
+        string[] staticSessions =
+        [
+            "278bb767-29ce-4148-9117-dce4ab360cd3",
+            "278bb767-29ce-4148-9117-dce4ab360cd2",
+            "278bb767-29ce-4148-9117-dce4ab360cd1",
+            "278bb767-29ce-4148-9117-dce4ab360cd0",
+            "278bb767-29ce-4148-9117-dce4ab360cd4",
+            "278bb767-29ce-4148-9117-dce4ab360cd5"
+        ];
+        var r = staticSessions.Select(x =>
+        {
+            en.MoveNext();
+            Sessions.Active.Add(x, en.Current);
+            return x;
+        }).ToArray();
+        Console.WriteLine("Posts generated.");
     }
 
     private async Task EnsureDatabaseCreated(NpgsqlConnection connection)
@@ -62,5 +129,27 @@ public class DatabaseMigrator(IConfiguration configuration, DatabaseConnectionPr
         if ((int)(result ?? 0) != 1)
             await new NpgsqlCommand($"Create database {databaseName}", connection)
                 .ExecuteNonQueryAsync();
+    }
+
+    private async Task<List<string>> GetUserIds(NpgsqlConnection connection)
+    {
+        // SQL-запрос для получения первых 10 user_id
+        var sql = "SELECT id FROM users LIMIT 10";
+        var result = new List<string>();
+
+        using (var command = new NpgsqlCommand(sql, connection))
+        {
+            using (var reader = await command.ExecuteReaderAsync())
+            {
+                while (reader.Read())
+                {
+                    // Предполагается, что user_id имеет тип string
+                    string userId = reader.GetString(0);
+                    result.Add(userId);
+                }
+            }
+        }
+
+        return result;
     }
 }
